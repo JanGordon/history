@@ -21,23 +21,46 @@ const session = new Session()
 // }
 //
 
+const input = document.getElementById("name")! as HTMLInputElement
+
+
 let a = new SmartActionV3({d:data}, (data)=>{
     data.d.name = "a woof of space"
     return true
 }, true)
 
 
-let a2 = new SmartActionV3(data, (data)=>{
-    data.name = "a woof of space and some sparkles overhead"
-    return true
-})
 
-session.commitAction([a, a2])
+session.commitAction([a])
 
 console.log(data)
+console.log("loc", session.currentLocation)
+
+document.getElementById("commit")?.addEventListener("click", ()=>{
+    var inputValue = input.value
+    let a = new SmartActionV3({d: data}, (data)=>{
+        data.d.name = inputValue
+        console.log("im in the forward function", inputValue)
+        return true
+    }, true)
+    session.commitAction([a])
+    console.log(data, "loc", session.currentLocation)
+
+})
 
 document.getElementById("undo")?.addEventListener("click", ()=>{
     session.undo()
-    console.log(data)
+    input.value = data.name
+    console.log(data, "loc", session.currentLocation)
+
+
+})
+
+document.getElementById("redo")?.addEventListener("click", ()=>{
+    console.log(session.redo())
+    input.value = data.name
+
+    console.log(data, "loc", session.currentLocation)
+
 
 })

@@ -20,7 +20,6 @@ export class SmartAction {
     constructor(data: any, fields: string[]) {
         this.data = data
         for (let f of fields) {
-            console.log(f, data)
             this.fieldStorage[f] = data[f]
         }
     }
@@ -51,9 +50,6 @@ export class SmartActionV2<d> {
             return true
         }
         var handler: ProxyHandler<any> = {
-            get(target, prop, reciever) {
-                console.log(target, prop, reciever)
-            },
             set: setFunction
         }
         this.proxiedData = new Proxy(data, handler)
@@ -81,8 +77,6 @@ export class SmartActionV3<d extends object> {
                 this.data[k] = v
             }
         }
-        console.trace(this.data)
-        console.log(this.data)
         return true
     }
     data: d
@@ -104,7 +98,7 @@ export class SmartActionV3<d extends object> {
                         this.fieldStorage[k][prop] = target[prop]
                         target[prop] = reciever
                     }
-                    console.log("lsiteneting to ", this.fieldStorage)
+                    console.log(prop, "changed")
                     return true
                 }
                 var handler: ProxyHandler<any> = {
@@ -115,7 +109,6 @@ export class SmartActionV3<d extends object> {
                 }
                 tempObject[k] = new Proxy(v, handler)
             }
-            console.log(tempObject)
 
             this.proxiedData = tempObject
         } else {
@@ -124,6 +117,8 @@ export class SmartActionV3<d extends object> {
                     this.fieldStorage[prop] = target[prop]
                     target[prop] = reciever
                 }
+                console.log(prop, "changed")
+
     
                 return true
             }
@@ -185,15 +180,15 @@ export class Session {
     currentAction() {
         return this.currentBranch()[this.currentLocation[this.currentLocation.length-1]]
     }
-    actions: Branch = []
-    readonly currentLocation = [0, 0]
+    actions: Branch = [{forward:()=>true, backward: ()=>true}]
+    readonly currentLocation = [0,0]// cange this
     // currentBranch: (Action | BranchJunction)[] = this.actions
     commitAction(actions: Action[]) {
         
 
         let currentBranch = this.currentBranch()
         // check if we are at end of branch because if not, we need to mkae a new branch junction
-        if (currentBranch.length == this.currentLocation[this.currentLocation.length-1]) {
+        if (currentBranch.length-1 == this.currentLocation[this.currentLocation.length-1]) {
             this.currentLocation[this.currentLocation.length-1]+=actions.length
             for (let i of actions) {
                 i.forward()
@@ -210,7 +205,7 @@ export class Session {
         }
     }
     undo() {
-
+        console.log(this.currentLocation)
         var decrementLastIndex = ()=>{
             if (this.currentLocation.length > 0) {
 
@@ -230,26 +225,65 @@ export class Session {
                     // we can ignore the value directly before and move on to the one before and decrement that
                     // (actually we need to remove it first)
                     this.currentLocation.pop()
+                    // this.currentLocation[this.currentLocation.length-1]--
                     // we then decrement the next value
                     // but only if it is above 0
                     decrementLastIndex()
                         
                 } else {
+
                     // we finally found the branch that has at least 1 actions in it
-                    this.currentLocation[this.currentLocation.length-1]--
-                    // this.currentLocation
+                    let action = this.currentAction()
+                    if (Array.isArray(action)) {
+                        // a branch
+                        this.currentLocation[this.currentLocation.length-1]--
+                    } else {
+                        // we can safely ignore this because it will always be action because there is never a branchJunction on the end of the currentLocation
+                        console.log(this.currentLocation, this.actions, this.currentAction())
+                        //@ts-ignore
+                        this.currentAction().backward()
+                        this.currentLocation[this.currentLocation.length-1]--
+
+                    }
                     
-                    console.log(this.currentLocation)
-                    // we can safely ignore this because it will always be action because there is never a branchJunction on the end of the currentLocation
-                    //@ts-ignore
-                    this.currentAction().backward()
                 }
             } else {
-                alert("youve reached teh dstart")
+                // alert("youve reached teh dstart")
             }
         }
         
         decrementLastIndex()
+    }
+
+    redo() {
+        let currentBranch = this.currentBranch()
+        if (this.currentLocation[this.currentLocation.length-1] == currentBranch.length) {
+            // we are at end of branch
+            return false
+        } else {
+            this.currentLocation[this.currentLocation.length-1]++
+            console.log(currentBranch)
+            // currently unsafe if it is a branch junction
+            var traverseJunctions = ()=>{
+                let action = this.currentAction()
+                if (Array.isArray(action)) {
+                    // we are at a branch junction 
+                    // ask which route to take
+                    let route = prompt("there is a diverging junction here, pick which route to take, (0-"+(action.length-1)+"): ")
+                    this.currentLocation.push(parseInt(route ? route : "0"))
+                    this.currentLocation.push(0) // first action of the branch
+                    
+                    
+                    return traverseJunctions()
+                } else {
+                    console.log(this.currentBranch())
+                    console.log("going forward", this.currentLocation, this.currentAction())
+                    action.forward()
+                    return true
+                }
+            }
+            return traverseJunctions()
+        }
     }
     
 }

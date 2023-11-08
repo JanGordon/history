@@ -15,7 +15,7 @@
               this.fieldStorage[k][prop] = target[prop];
               target[prop] = reciever;
             }
-            console.log("lsiteneting to ", this.fieldStorage);
+            console.log(prop, "changed");
             return true;
           };
           var handler = {
@@ -26,7 +26,6 @@
           };
           tempObject[k] = new Proxy(v, handler);
         }
-        console.log(tempObject);
         this.proxiedData = tempObject;
       } else {
         var setFunction = (target, prop, reciever) => {
@@ -34,6 +33,7 @@
             this.fieldStorage[prop] = target[prop];
             target[prop] = reciever;
           }
+          console.log(prop, "changed");
           return true;
         };
         var handler = {
@@ -62,14 +62,12 @@
           this.data[k] = v;
         }
       }
-      console.trace(this.data);
-      console.log(this.data);
       return true;
     }
   };
   var Session = class {
     constructor() {
-      this.actions = [];
+      this.actions = [{ forward: () => true, backward: () => true }];
       this.currentLocation = [0, 0];
     }
     currentBranch() {
@@ -89,7 +87,7 @@
     }
     commitAction(actions) {
       let currentBranch = this.currentBranch();
-      if (currentBranch.length == this.currentLocation[this.currentLocation.length - 1]) {
+      if (currentBranch.length - 1 == this.currentLocation[this.currentLocation.length - 1]) {
         this.currentLocation[this.currentLocation.length - 1] += actions.length;
         for (let i of actions) {
           i.forward();
@@ -104,6 +102,7 @@
       }
     }
     undo() {
+      console.log(this.currentLocation);
       var decrementLastIndex = () => {
         if (this.currentLocation.length > 0) {
           if (this.currentLocation[this.currentLocation.length - 1] - 1 < 0) {
@@ -113,15 +112,43 @@
             this.currentLocation.pop();
             decrementLastIndex();
           } else {
-            this.currentLocation[this.currentLocation.length - 1]--;
-            console.log(this.currentLocation);
-            this.currentAction().backward();
+            let action = this.currentAction();
+            if (Array.isArray(action)) {
+              this.currentLocation[this.currentLocation.length - 1]--;
+            } else {
+              console.log(this.currentLocation, this.actions, this.currentAction());
+              this.currentAction().backward();
+              this.currentLocation[this.currentLocation.length - 1]--;
+            }
           }
         } else {
-          alert("youve reached teh dstart");
         }
       };
       decrementLastIndex();
+    }
+    redo() {
+      let currentBranch = this.currentBranch();
+      if (this.currentLocation[this.currentLocation.length - 1] == currentBranch.length) {
+        return false;
+      } else {
+        this.currentLocation[this.currentLocation.length - 1]++;
+        console.log(currentBranch);
+        var traverseJunctions = () => {
+          let action = this.currentAction();
+          if (Array.isArray(action)) {
+            let route = prompt("there is a diverging junction here, pick which route to take, (0-" + (action.length - 1) + "): ");
+            this.currentLocation.push(parseInt(route ? route : "0"));
+            this.currentLocation.push(0);
+            return traverseJunctions();
+          } else {
+            console.log(this.currentBranch());
+            console.log("going forward", this.currentLocation, this.currentAction());
+            action.forward();
+            return true;
+          }
+        };
+        return traverseJunctions();
+      }
     }
   };
 
@@ -131,18 +158,32 @@
     age: "12"
   };
   var session = new Session();
+  var input = document.getElementById("name");
   var a = new SmartActionV3({ d: data }, (data2) => {
     data2.d.name = "a woof of space";
     return true;
   }, true);
-  var a2 = new SmartActionV3(data, (data2) => {
-    data2.name = "a woof of space and some sparkles overhead";
-    return true;
-  });
-  session.commitAction([a, a2]);
+  session.commitAction([a]);
   console.log(data);
+  console.log("loc", session.currentLocation);
+  document.getElementById("commit")?.addEventListener("click", () => {
+    var inputValue = input.value;
+    let a2 = new SmartActionV3({ d: data }, (data2) => {
+      data2.d.name = inputValue;
+      console.log("im in the forward function", inputValue);
+      return true;
+    }, true);
+    session.commitAction([a2]);
+    console.log(data, "loc", session.currentLocation);
+  });
   document.getElementById("undo")?.addEventListener("click", () => {
     session.undo();
-    console.log(data);
+    input.value = data.name;
+    console.log(data, "loc", session.currentLocation);
+  });
+  document.getElementById("redo")?.addEventListener("click", () => {
+    console.log(session.redo());
+    input.value = data.name;
+    console.log(data, "loc", session.currentLocation);
   });
 })();
