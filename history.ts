@@ -5,6 +5,8 @@ type ActionResult = boolean
 export type Action = {
     forward: ()=>ActionResult
     backward: ()=>ActionResult
+    description?: string
+    name?: string
 }
 
 export class SmartAction {
@@ -15,6 +17,8 @@ export class SmartAction {
         }
         return true
     }
+    name: string
+    description: string
     data: any
     fieldStorage = {}
     constructor(data: any, fields: string[]) {
@@ -58,6 +62,8 @@ export class SmartActionV2<d> {
 }
 
 export class SmartActionV3<d extends object> {
+    name: string
+    description: string
     forwardFunction: (data: d)=>ActionResult
     forward() {
         return this.forwardFunction(this.proxiedData)
@@ -83,7 +89,9 @@ export class SmartActionV3<d extends object> {
     proxiedData: d
     fieldStorage = {}
     hasMultipleData?: boolean
-    constructor(data: d, forwardFunction: (data: d)=>ActionResult, hasMultipleData?: boolean) {
+    constructor(data: d, forwardFunction: (data: d)=>ActionResult, hasMultipleData?: boolean, name?: string, description?: string) {
+        this.name = name
+        this.description = description
         this.forwardFunction = forwardFunction
         this.hasMultipleData = hasMultipleData
         this.data = data
@@ -158,11 +166,17 @@ export class SessionOld {
     }
     
 }
-type Branch = (Action | BranchJunction)[]
-type BranchJunction = Branch[]
+export type Branch = (Action | BranchJunction)[]
+export type BranchJunction = Branch[]
 
 
 export class Session {
+    onLocationChange: (()=>void)[] = []
+    changedLocation() {
+        for (let i of this.onLocationChange) {
+            i()
+        }
+    }
     currentBranch() {
         console.log(this.currentLocation)
 
@@ -196,6 +210,7 @@ export class Session {
                 i.forward()
                 currentBranch.push(i)
             }
+            this.changedLocation()
         } else {
             console.log("creating a new branhc at position", )
             // get all actions / branches after the new branchjunction
@@ -210,6 +225,7 @@ export class Session {
             currentBranch[newBranchJunctionLocation] = [oldBranch, newBranch]
             this.currentLocation.push(1, 0)// take the 2nd exit on the branch,
             // the 0 shows that it is the 1st index on that branch
+            this.changedLocation()
         }
     }
     undo() {
@@ -262,6 +278,8 @@ export class Session {
         }
         
         decrementLastIndex(false)
+        this.changedLocation()
+
     }
 
     redo() {
@@ -290,6 +308,7 @@ export class Session {
                 }
             }
             this.currentLocation[this.currentLocation.length-1]++
+            this.changedLocation()
 
             return traverseJunctions(currentBranch[this.currentLocation[this.currentLocation.length-1]])
         }
