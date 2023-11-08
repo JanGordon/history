@@ -1,7 +1,7 @@
 import {html, css, LitElement} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
 
-import { Action, Session, SmartActionV3, SmartActionV2, BranchJunction, Branch } from "./history";
+import { Session, SmartActionV3, BranchJunction, Branch } from "./history";
 
 type dataType = {name: string, age: string}
 const data: dataType = {
@@ -10,19 +10,6 @@ const data: dataType = {
 }
 
 const session = new Session()
-
-
-// let d = new SmartAction(data, [
-//     "name",
-//     "age"
-// ]) // put in array all the fields that will be modified
-// // maybe we could use MutatoNObseevr for this
-// d.forward = ()=>{
-//     data.name = "jan"
-//     data.age = "154"
-//     return true
-// }
-//
 
 const input = document.getElementById("name")! as HTMLInputElement
 

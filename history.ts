@@ -9,58 +9,6 @@ export type Action = {
     name?: string
 }
 
-export class SmartAction {
-    forward: ()=>ActionResult
-    backward() {
-        for (let [k, v] of Object.entries(this.fieldStorage)) {
-            this.data[k] = v
-        }
-        return true
-    }
-    name: string
-    description: string
-    data: any
-    fieldStorage = {}
-    constructor(data: any, fields: string[]) {
-        this.data = data
-        for (let f of fields) {
-            this.fieldStorage[f] = data[f]
-        }
-    }
-}
-
-export class SmartActionV2<d> {
-    forwardFunction: (data: d)=>ActionResult
-    forward() {
-        return this.forwardFunction(this.proxiedData)
-    }
-    backward() {
-        for (let [k, v] of Object.entries(this.fieldStorage)) {
-            this.data[k] = v
-        }
-        return true
-    }
-    data: d
-    proxiedData: d
-    fieldStorage = {}
-    constructor(data: d) {
-        this.data = data
-        //create proxy
-        var setFunction = (target: d, prop: string, reciever: any)=>{
-            if (target[prop] != reciever) {
-                this.fieldStorage[prop] = target[prop]
-                target[prop] = reciever
-            }
-            return true
-        }
-        var handler: ProxyHandler<any> = {
-            set: setFunction
-        }
-        this.proxiedData = new Proxy(data, handler)
-        
-    }
-}
-
 export class SmartActionV3<d extends object> {
     name: string
     description: string
@@ -146,26 +94,6 @@ export class SmartActionV3<d extends object> {
 
 
 
-export class SessionOld {
-    actions: Action[] = []
-    currentPosition = 0
-    commitAction(actions: Action[]) {
-        for (let i of actions) {
-            i.forward()
-            this.actions.push(i)
-        }
-        this.currentPosition = this.actions.length - 1
-    }
-    undo() {
-        if (this.currentPosition >= 0) {
-            this.actions[this.currentPosition].backward()
-        }
-        if (this.currentPosition > 0) {
-            this.currentPosition--
-        }
-    }
-    
-}
 export type Branch = (Action | BranchJunction)[]
 export type BranchJunction = Branch[]
 
