@@ -1,4 +1,15 @@
 {
+  "name": "chrono-history",
+  "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JanGordon/history.git",
+    "directory": "/"
+  },
+  "keywords": [
+    "history"
+  ],
+  "main": "main.ts",
   "dependencies": {
     "lit": "^3.0.2"
   }
