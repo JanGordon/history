@@ -51,7 +51,7 @@ document.getElementById("commit")?.addEventListener("click", ()=>{
 document.getElementById("undo")?.addEventListener("click", ()=>{
     session.undo()
     input.value = data.name
-    console.log(data, "loc", session.currentLocation)
+    console.log(data, session, "loc", session.currentLocation)
 
 
 })

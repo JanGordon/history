@@ -164,6 +164,8 @@ type BranchJunction = Branch[]
 
 export class Session {
     currentBranch() {
+        console.log(this.currentLocation)
+
         var getItemAt = (branch: Branch, currentLocationIndex: number)=>{
             var d = branch[this.currentLocation[currentLocationIndex]]
             if (Array.isArray(d)) {
@@ -181,7 +183,7 @@ export class Session {
         return this.currentBranch()[this.currentLocation[this.currentLocation.length-1]]
     }
     actions: Branch = [{forward:()=>true, backward: ()=>true}]
-    readonly currentLocation = [0,0]// cange this
+    readonly currentLocation = [0]// cange this
     // currentBranch: (Action | BranchJunction)[] = this.actions
     commitAction(actions: Action[]) {
         
@@ -192,13 +194,19 @@ export class Session {
             this.currentLocation[this.currentLocation.length-1]+=actions.length
             for (let i of actions) {
                 i.forward()
-                this.actions.push(i)
+                currentBranch.push(i)
             }
         } else {
+            console.log("creating a new branhc at position", )
             // get all actions / branches after the new branchjunction
             let newBranchJunctionLocation = currentBranch.indexOf(this.currentAction())
             let oldBranch = currentBranch.slice(newBranchJunctionLocation)
-            let newBranch = []
+            currentBranch.splice(newBranchJunctionLocation)
+            let newBranch: Branch = []
+            for (let i of actions) {
+                i.forward()
+                newBranch.push(i)
+            }
             currentBranch[newBranchJunctionLocation] = [oldBranch, newBranch]
             this.currentLocation.push(1, 0)// take the 2nd exit on the branch,
             // the 0 shows that it is the 1st index on that branch
@@ -206,7 +214,7 @@ export class Session {
     }
     undo() {
         console.log(this.currentLocation)
-        var decrementLastIndex = ()=>{
+        var decrementLastIndex = (onBranchLocation: boolean)=>{
             if (this.currentLocation.length > 0) {
 
                 
@@ -228,15 +236,16 @@ export class Session {
                     // this.currentLocation[this.currentLocation.length-1]--
                     // we then decrement the next value
                     // but only if it is above 0
-                    decrementLastIndex()
+                    decrementLastIndex(true)
                         
                 } else {
 
                     // we finally found the branch that has at least 1 actions in it
-                    let action = this.currentAction()
-                    if (Array.isArray(action)) {
+                    if (onBranchLocation) {
                         // a branch
                         this.currentLocation[this.currentLocation.length-1]--
+                        //@ts-ignore
+
                     } else {
                         // we can safely ignore this because it will always be action because there is never a branchJunction on the end of the currentLocation
                         console.log(this.currentLocation, this.actions, this.currentAction())
@@ -252,7 +261,7 @@ export class Session {
             }
         }
         
-        decrementLastIndex()
+        decrementLastIndex(false)
     }
 
     redo() {
@@ -261,11 +270,10 @@ export class Session {
             // we are at end of branch
             return false
         } else {
-            this.currentLocation[this.currentLocation.length-1]++
+            // we know there are still items in branch
             console.log(currentBranch)
             // currently unsafe if it is a branch junction
-            var traverseJunctions = ()=>{
-                let action = this.currentAction()
+            var traverseJunctions = (action: Action | BranchJunction)=>{
                 if (Array.isArray(action)) {
                     // we are at a branch junction 
                     // ask which route to take
@@ -274,15 +282,16 @@ export class Session {
                     this.currentLocation.push(0) // first action of the branch
                     
                     
-                    return traverseJunctions()
+                    return traverseJunctions(this.currentBranch()[0])
                 } else {
-                    console.log(this.currentBranch())
-                    console.log("going forward", this.currentLocation, this.currentAction())
+                    console.log("going forward on", this.currentLocation)
                     action.forward()
                     return true
                 }
             }
-            return traverseJunctions()
+            this.currentLocation[this.currentLocation.length-1]++
+
+            return traverseJunctions(currentBranch[this.currentLocation[this.currentLocation.length-1]])
         }
     }
     

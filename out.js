@@ -68,9 +68,10 @@
   var Session = class {
     constructor() {
       this.actions = [{ forward: () => true, backward: () => true }];
-      this.currentLocation = [0, 0];
+      this.currentLocation = [0];
     }
     currentBranch() {
+      console.log(this.currentLocation);
       var getItemAt = (branch, currentLocationIndex) => {
         var d = branch[this.currentLocation[currentLocationIndex]];
         if (Array.isArray(d)) {
@@ -91,29 +92,34 @@
         this.currentLocation[this.currentLocation.length - 1] += actions.length;
         for (let i of actions) {
           i.forward();
-          this.actions.push(i);
+          currentBranch.push(i);
         }
       } else {
+        console.log("creating a new branhc at position");
         let newBranchJunctionLocation = currentBranch.indexOf(this.currentAction());
         let oldBranch = currentBranch.slice(newBranchJunctionLocation);
+        currentBranch.splice(newBranchJunctionLocation);
         let newBranch = [];
+        for (let i of actions) {
+          i.forward();
+          newBranch.push(i);
+        }
         currentBranch[newBranchJunctionLocation] = [oldBranch, newBranch];
         this.currentLocation.push(1, 0);
       }
     }
     undo() {
       console.log(this.currentLocation);
-      var decrementLastIndex = () => {
+      var decrementLastIndex = (onBranchLocation) => {
         if (this.currentLocation.length > 0) {
           if (this.currentLocation[this.currentLocation.length - 1] - 1 < 0) {
             var currentBranch = this.currentBranch();
             currentBranch[this.currentLocation[this.currentLocation.length - 1]].backward();
             this.currentLocation.pop();
             this.currentLocation.pop();
-            decrementLastIndex();
+            decrementLastIndex(true);
           } else {
-            let action = this.currentAction();
-            if (Array.isArray(action)) {
+            if (onBranchLocation) {
               this.currentLocation[this.currentLocation.length - 1]--;
             } else {
               console.log(this.currentLocation, this.actions, this.currentAction());
@@ -124,30 +130,28 @@
         } else {
         }
       };
-      decrementLastIndex();
+      decrementLastIndex(false);
     }
     redo() {
       let currentBranch = this.currentBranch();
       if (this.currentLocation[this.currentLocation.length - 1] == currentBranch.length) {
         return false;
       } else {
-        this.currentLocation[this.currentLocation.length - 1]++;
         console.log(currentBranch);
-        var traverseJunctions = () => {
-          let action = this.currentAction();
+        var traverseJunctions = (action) => {
           if (Array.isArray(action)) {
             let route = prompt("there is a diverging junction here, pick which route to take, (0-" + (action.length - 1) + "): ");
             this.currentLocation.push(parseInt(route ? route : "0"));
             this.currentLocation.push(0);
-            return traverseJunctions();
+            return traverseJunctions(this.currentBranch()[0]);
           } else {
-            console.log(this.currentBranch());
-            console.log("going forward", this.currentLocation, this.currentAction());
+            console.log("going forward on", this.currentLocation);
             action.forward();
             return true;
           }
         };
-        return traverseJunctions();
+        this.currentLocation[this.currentLocation.length - 1]++;
+        return traverseJunctions(currentBranch[this.currentLocation[this.currentLocation.length - 1]]);
       }
     }
   };
@@ -179,7 +183,7 @@
   document.getElementById("undo")?.addEventListener("click", () => {
     session.undo();
     input.value = data.name;
-    console.log(data, "loc", session.currentLocation);
+    console.log(data, session, "loc", session.currentLocation);
   });
   document.getElementById("redo")?.addEventListener("click", () => {
     console.log(session.redo());
