@@ -627,7 +627,7 @@
   }
 
   // history.ts
-  var SmartActionV3 = class {
+  var SimpleAction = class {
     constructor(data2, forwardFunction, hasMultipleData, name, description) {
       this.fieldStorage = {};
       this.name = name;
@@ -802,7 +802,7 @@
   };
   var session = new Session();
   var input = document.getElementById("name");
-  var a3 = new SmartActionV3({ d: data }, (data2) => {
+  var a3 = new SimpleAction({ d: data }, (data2) => {
     data2.d.name = "a woof of space";
     return true;
   }, true, "update name");
@@ -812,7 +812,7 @@
   var _a;
   (_a = document.getElementById("commit")) == null ? void 0 : _a.addEventListener("click", () => {
     var inputValue = input.value;
-    let a4 = new SmartActionV3({ d: data }, (data2) => {
+    let a4 = new SimpleAction({ d: data }, (data2) => {
       data2.d.name = inputValue;
       console.log("im in the forward function", inputValue);
       return true;
@@ -840,17 +840,17 @@
         this.requestUpdate("session");
       });
     }
-    branch(branch) {
-      return x`<div class="branch">${branch.map((v2) => Array.isArray(v2) ? this.branchJunction(v2) : x`<button class="action ${this.session.currentAction() == v2 ? "current" : ""}">${v2.name}</button>`)}</div>`;
+    Branch(Branch) {
+      return x`<div class="HISTORY.Branch">${Branch.map((v2) => Array.isArray(v2) ? this.BranchJunction(v2) : x`<button class="action ${this.session.currentAction() == v2 ? "current" : ""}">${v2.name}</button>`)}</div>`;
     }
-    branchJunction(junction) {
+    BranchJunction(junction) {
       return x`
-            <div class="branch-junction">${junction.map((v2) => this.branch(v2))}</div>
+            <div class="HISTORY.Branch-junction">${junction.map((v2) => this.Branch(v2))}</div>
         `;
     }
     render() {
       return x`
-            ${this.branch(this.session.actions)}
+            ${this.Branch(this.session.actions)}
         `;
     }
   };
@@ -859,13 +859,13 @@
             width: 100%;
             display: flex;
         }
-        .branch {
+        .HISTORY.Branch {
             display: flex;
         }
         .action.current {
             color: red;
         }
-        .branch-junction {
+        .HISTORY.Branch-junction {
             display: flex;
             flex-direction: column;
         }

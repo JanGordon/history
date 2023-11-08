@@ -1,7 +1,7 @@
 import {html, css, LitElement} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
 
-import { Session, SmartActionV3, BranchJunction, Branch } from "./history";
+import * as HISTORY from "./history";
 
 type dataType = {name: string, age: string}
 const data: dataType = {
@@ -9,12 +9,12 @@ const data: dataType = {
     age: "12"
 }
 
-const session = new Session()
+const session = new HISTORY.Session()
 
 const input = document.getElementById("name")! as HTMLInputElement
 
 
-let a = new SmartActionV3({d:data}, (data)=>{
+let a = new HISTORY.SimpleAction({d:data}, (data)=>{
     data.d.name = "a woof of space"
     return true
 }, true, "update name")
@@ -28,7 +28,7 @@ console.log("loc", session.currentLocation)
 
 document.getElementById("commit")?.addEventListener("click", ()=>{
     var inputValue = input.value
-    let a = new SmartActionV3({d: data}, (data)=>{
+    let a = new HISTORY.SimpleAction({d: data}, (data)=>{
         data.d.name = inputValue
         console.log("im in the forward function", inputValue)
         return true
@@ -63,13 +63,13 @@ class HistoryTreeComponent extends LitElement {
             width: 100%;
             display: flex;
         }
-        .branch {
+        .HISTORY.Branch {
             display: flex;
         }
         .action.current {
             color: red;
         }
-        .branch-junction {
+        .HISTORY.Branch-junction {
             display: flex;
             flex-direction: column;
         }
@@ -86,22 +86,22 @@ class HistoryTreeComponent extends LitElement {
     }
 
 
-    branch(branch: Branch) {
-        return html`<div class="branch">${branch.map((v)=>Array.isArray(v)
-            ? this.branchJunction(v)
+    Branch(Branch: HISTORY.Branch) {
+        return html`<div class="HISTORY.Branch">${Branch.map((v)=>Array.isArray(v)
+            ? this.BranchJunction(v)
             : html `<button class="action ${(this.session.currentAction() == v) ? "current" : ""}">${v.name}</button>`    
             )}</div>`
         
     }
-    branchJunction(junction: BranchJunction) {
+    BranchJunction(junction: HISTORY.BranchJunction) {
         return html`
-            <div class="branch-junction">${junction.map((v)=>this.branch(v))}</div>
+            <div class="HISTORY.Branch-junction">${junction.map((v)=>this.Branch(v))}</div>
         `
     }
 
     render() {
         return html`
-            ${this.branch(this.session.actions)}
+            ${this.Branch(this.session.actions)}
         `
     }
 }

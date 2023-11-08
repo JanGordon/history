@@ -9,7 +9,7 @@ export type Action = {
     name?: string
 }
 
-export class SmartActionV3<d extends object> {
+export class SimpleAction<d extends object> {
     name: string
     description: string
     forwardFunction: (data: d)=>ActionResult
